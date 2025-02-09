@@ -26,7 +26,7 @@ A Reddit bot that monitors [ethresear.ch](https://ethresear.ch) for new research
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/ethresearch-socials-bot.git
+git clone https://github.com/yawarasuuna/ethresearch-socials-bot.git
 cd ethresearch-socials-bot
 ```
 
