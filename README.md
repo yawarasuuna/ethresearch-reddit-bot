@@ -1,4 +1,4 @@
-# ETH Research Bot
+# ETH Research Socials Bot
 
 A Reddit bot that monitors [ethresear.ch](https://ethresear.ch) for new research posts and automatically shares them to specified subreddits with proper attribution and formatting.
 
@@ -26,8 +26,8 @@ A Reddit bot that monitors [ethresear.ch](https://ethresear.ch) for new research
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/eth-research-bot.git
-cd eth-research-bot
+git clone https://github.com/yourusername/ethresearch-socials-bot.git
+cd ethresearch-socials-bot
 ```
 
 2. Create and activate a virtual environment:
@@ -48,7 +48,7 @@ pip install -r requirements.txt
 1. Go to [Reddit's App Preferences](https://www.reddit.com/prefs/apps)
 2. Click "Create App" or "Create Another App"
 3. Fill in the following:
-   - Name: ETHResearchBot (or your preferred name)
+   - Name: ETHResearchSocialsBot (or your preferred name)
    - App type: Script
    - Description: Bot that posts ETH research updates
    - About URL: Your GitHub repository URL
@@ -110,7 +110,7 @@ python -m unittest tests/test_bot.py
 ## Project Structure
 
 ```
-eth-research-bot/
+eth-research-socials-bot/
 ├── config.py          # Configuration and environment settings
 ├── main.py            # Main bot logic and entry point
 ├── reddit_poster.py   # Reddit API integration
@@ -148,7 +148,7 @@ This project follows PEP 8 guidelines with some modifications:
 
 ## Logging
 
-Logs are stored in `eth_research_bot.log` with the following levels:
+Logs are stored in `eth_research_socials_bot.log` with the following levels:
 - INFO: Normal operation events
 - WARNING: Non-critical issues
 - ERROR: Critical issues that need attention
@@ -175,14 +175,14 @@ For production deployment:
 Example systemd service file:
 ```ini
 [Unit]
-Description=ETH Research Bot
+Description=ETH Research Socials Bot
 After=network.target
 
 [Service]
 Type=simple
 User=botuser
-WorkingDirectory=/path/to/eth-research-bot
-Environment=PYTHONPATH=/path/to/eth-research-bot
+WorkingDirectory=/path/to/ethresearch-socials-bot
+Environment=PYTHONPATH=/path/to/ethresearch-socials-bot
 ExecStart=/path/to/venv/bin/python main.py
 Restart=always
 RestartSec=3
@@ -230,7 +230,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Acknowledgments
 
 - ETH Research community
-- @ethresearchbot team
+- @ethresearchbot team for inspiration
 - Reddit API developers
 - Beautiful Soup maintainers
 - PRAW developers
