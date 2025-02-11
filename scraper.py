@@ -1,5 +1,5 @@
-# SPDX-License-Identifier: WTFPL 
-# ETH Research Bot - Main Script 
+# SPDX-License-Identifier: MIT 
+# ETH Research Bot - Scraper Script 
 # See LICENSE file for full license details.
 
 from dataclasses import dataclass
