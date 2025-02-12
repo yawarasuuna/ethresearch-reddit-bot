@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT 
-# ETH Research Bot - Scraper Script 
+# ETH Research Socials Bot - Scraper Script 
 # See LICENSE file for full license details.
 
 from dataclasses import dataclass
@@ -116,3 +116,145 @@ class EthResearchScraper:
                     time.sleep(retry_delay)
                 else:
                     raise NetworkError(f"All attempts failed for {url}") from e
+    
+    def _extract_topic_id(self, url:str) -> str:
+        """
+        Extract topic ID from URL.
+
+        Args: 
+            url: Topic URL
+
+        Returns:
+            Topic ID string
+
+        Raises: 
+            ValueError: If topic ID cannot be extracted
+        """
+        try:
+            url = url.rstrip('/')  ###
+            return url.split('/')[-1]
+        except (IndexError, AttributeError) as e:
+            raise ValueError(f"Could not extract topic ID from {url}") from e
+
+    def _parse_post_details(self, soup: BeautifulSoup, url:str) -> Optional[dict]:
+        """
+        Parse post details from BeautifulSoup object.
+
+        Args:
+            soup: BeatifulSoup object of the post page
+            url: URL of the post
+
+        Returns:
+            Dictionary containing post details or None if Parsing fails
+        """
+        first_post = soup.find('div', {
+            'id':'post_1',
+            'class':'topic-body crawler-post'
+        })
+        if not isinstance(first_post, Tag):
+            self.logger.warning("Could not find post #1 for {url}")
+            return None
+
+        author_element = first_post.select_one(
+            'span[itemprop="author"] span[itemprop = "name]'
+        )
+        time_element = first_post.select_one('time[datetime]')
+
+        if not all(isinstance(elem, Tag) for elem in [author_element, time_element]):
+            self.logger.warning(f"Missing required elements for {url}")
+
+        timestamp = time_element.get('datetime')
+        if not timestamp:
+            self.logger.warning(f"No datetime found for {url}")
+            return None
+        
+        return {
+            'author': author_element.get_text(strip=True),
+            'timestamp': timestamp,
+            'is_post_1': True
+        }
+
+    def get_topic_details(self, url: str) -> Optional[dict]:
+        """
+        Fetch and parse topic details from a given URL
+        
+        Args:
+            url: Topic URL to fetch
+            
+        Returns:
+            Dictionary containing topic details or None if fetching or parsing fails
+
+        Raises:
+            NetworkError: if network operations fail
+            ParseError: if HTML parsing fails
+        """
+        try:
+            html_content = self._fetch_with_retry(url)
+            soup = BeautifulSoup(html_content, 'html.parser')
+            return self._parse_post_details(soup, url)
+        except (NetworkError, ParseError) as e:
+            self.logger.error(f"Error fetching topic details for {url}: {str(e)}")
+            return None
+
+    def get_latest_post(self) -> Optional[PostDetails]:
+        """
+        Fetch the latest Post #1 from ethresear.ch/latest.
+
+        Returns: 
+            PostDetails object for the latest post or None if no valid post is found
+
+        Raises:
+            NetworkError: if network operations fail
+            ParseError: if HTML parsing fails
+        """
+        try:
+            latest_url = urljoin(self.BASE_URL, self.LATEST_PATH)
+            html_content = self._fetch_with_retry(latest_url)
+            soup = BeautifulSoup(html_content, 'html.parser')
+
+            topics = soup.select('tr.topic-list-item:not(.sticky)')
+            self.logger.info(f"Found {len(topics)} topic rows")
+
+            valid_posts = []
+            for topic in topics[:self.MAX_TOPICS_TO_CHECK]:
+                if not isinstance(topic, Tag):
+                    continue
+
+                title_element = topic.select_one('td.main-link a.title')
+                if not isinstance(title_element, Tag):
+                    continue
+
+                title = title_element.get_text(strip=True)
+                if any(phrase in title.lower() for phrase in self.SKIP_PHRASES):
+                    self.logger.info(f"Skipping filtered posts {title}")
+                    continue
+
+                link = urljoin(self.BASE_URL, title_element.get('href', ''))
+                topic_id = self._extract_topic_id(link)
+
+                details = self.get_topic_details(link)
+                if not details or not details.get('is_post_1'):
+                    continue
+
+                valid_posts.append({
+                    'title': title,
+                    'link': link,
+                    'topic_id': topic_id,
+                    'authors': [details['author']],
+                    'timestamp': details['timestamp']
+                })
+
+            if not valid_posts:
+                self.logger.warning("No valid Post #1s found")
+                return None
+
+            latest_post = max(
+                valid_posts, key=lambda x: datetime.fromisoformat(x['timestamp'].replace('Z', '+00:00')
+                )
+            )
+
+            return PostDetails.from_dict(latest_post)
+
+        except Exception as e:
+            self.logger.error(f"Error in get_latest_post: {str(e)}")
+            raise
